@@ -160,3 +160,21 @@ else:
             st.success("Test submitted successfully!")
         except:
             st.error("Submission failed. Please retry.")
+
+# TIMER
+elapsed = int(time.time() - st.session_state.start_time)
+remaining = 900 - elapsed
+
+if remaining <= 0:
+    st.warning("Time is up. Auto submitting.")
+    st.session_state.submitted = True
+    remaining = 0
+
+mins = remaining // 60
+secs = remaining % 60
+
+st.markdown(f"## ⏱ Time Remaining: {mins}:{secs:02d}")
+
+# Refresh page every second to update timer
+time.sleep(1)
+st.rerun()
