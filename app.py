@@ -7,9 +7,9 @@ st.set_page_config(page_title="Candidate Test", layout="wide")
 
 WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzZSrHA5Sfuqqt0apwM7EI5dWpMGK4OfaqKKzxE9F1KiYhFpfU3rhFLTZ_KYeDOy8oSQA/exec"
 
-# -----------------------------
+# -----------------------
 # HEADER
-# -----------------------------
+# -----------------------
 
 col1, col2 = st.columns([3,7])
 
@@ -18,17 +18,15 @@ with col1:
 
 with col2:
     st.markdown("""
-    <div style='display:flex; flex-direction:column; justify-content:center; height:100%;'>
-        <h1 style='margin-bottom:0;'>Klick Consulting</h1>
-        <h3 style='margin-top:5px;'>Candidate Assessment Test</h3>
-    </div>
+    <h1 style='margin-bottom:0'>Klick Consulting</h1>
+    <h3 style='margin-top:5px'>Candidate Assessment Test</h3>
     """, unsafe_allow_html=True)
 
 st.markdown("---")
 
-# -----------------------------
-# SESSION VARIABLES
-# -----------------------------
+# -----------------------
+# SESSION STATE
+# -----------------------
 
 if "start_time" not in st.session_state:
     st.session_state.start_time = None
@@ -42,9 +40,9 @@ if "answers" not in st.session_state:
 if "last_autosave" not in st.session_state:
     st.session_state.last_autosave = time.time()
 
-# -----------------------------
-# CANDIDATE INFORMATION
-# -----------------------------
+# -----------------------
+# CANDIDATE INFO PAGE
+# -----------------------
 
 if st.session_state.start_time is None:
 
@@ -71,27 +69,30 @@ if st.session_state.start_time is None:
         else:
             st.error("Please complete all fields including CV.")
 
-# -----------------------------
+# -----------------------
 # TEST PAGE
-# -----------------------------
+# -----------------------
 
 else:
+
+    # TIMER PLACEHOLDER
+    timer_placeholder = st.empty()
 
     elapsed = int(time.time() - st.session_state.start_time)
     remaining = 900 - elapsed
 
     if remaining <= 0:
-        st.warning("Time is up. Auto submitting.")
+        remaining = 0
         st.session_state.submitted = True
 
     mins = remaining // 60
     secs = remaining % 60
 
-    st.markdown(f"## ⏱ Time Remaining: {mins}:{secs:02d}")
+    timer_placeholder.markdown(f"## ⏱ Time Remaining: {mins}:{secs:02d}")
 
-    # -----------------------------
+    # -----------------------
     # LOAD QUESTIONS
-    # -----------------------------
+    # -----------------------
 
     response = requests.get(WEBHOOK_URL)
     questions = response.json()
@@ -100,10 +101,6 @@ else:
         st.session_state.answers = [""] * len(questions)
 
     answers = []
-
-    # -----------------------------
-    # QUESTIONS LOOP
-    # -----------------------------
 
     for i, q in enumerate(questions):
 
@@ -117,9 +114,9 @@ else:
 
     st.session_state.answers = answers
 
-    # -----------------------------
-    # AUTO SAVE EVERY 15 SEC
-    # -----------------------------
+    # -----------------------
+    # AUTO SAVE
+    # -----------------------
 
     if time.time() - st.session_state.last_autosave > 15:
 
@@ -140,9 +137,9 @@ else:
         except:
             pass
 
-    # -----------------------------
+    # -----------------------
     # SUBMIT BUTTON
-    # -----------------------------
+    # -----------------------
 
     if st.button("Submit Test") or st.session_state.submitted:
 
@@ -161,20 +158,9 @@ else:
         except:
             st.error("Submission failed. Please retry.")
 
-# TIMER
-elapsed = int(time.time() - st.session_state.start_time)
-remaining = 900 - elapsed
+    # -----------------------
+    # LIVE TIMER LOOP
+    # -----------------------
 
-if remaining <= 0:
-    st.warning("Time is up. Auto submitting.")
-    st.session_state.submitted = True
-    remaining = 0
-
-mins = remaining // 60
-secs = remaining % 60
-
-st.markdown(f"## ⏱ Time Remaining: {mins}:{secs:02d}")
-
-# Refresh page every second to update timer
-time.sleep(1)
-st.rerun()
+    time.sleep(1)
+    st.rerun()
