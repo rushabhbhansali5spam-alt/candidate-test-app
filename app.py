@@ -39,10 +39,14 @@ if "submitted" not in st.session_state:
     st.session_state.submitted = False
 
 if "answers" not in st.session_state:
-    st.session_state.answers = {}
+    st.session_state.answers = []
 
 if "last_autosave" not in st.session_state:
     st.session_state.last_autosave = time.time()
+
+# -----------------------------
+# LOAD QUESTIONS ONCE
+# -----------------------------
 
 if "questions" not in st.session_state:
     try:
@@ -53,7 +57,6 @@ if "questions" not in st.session_state:
         st.stop()
 
 questions = st.session_state.questions
-
 
 # -----------------------------
 # CANDIDATE INFO PAGE
@@ -83,7 +86,6 @@ if st.session_state.start_time is None and not st.session_state.instructions:
 
         else:
             st.error("Please complete all fields including CV.")
-
 
 # -----------------------------
 # INSTRUCTIONS PAGE
@@ -122,13 +124,13 @@ Good luck!
         st.session_state.start_time = time.time()
         st.rerun()
 
-
 # -----------------------------
 # TEST PAGE
 # -----------------------------
 
 else:
 
+    # refresh every second
     st_autorefresh(interval=1000, key="timer")
 
     elapsed = int(time.time() - st.session_state.start_time)
@@ -143,31 +145,30 @@ else:
 
     st.markdown(f"## ⏱ Time Remaining: {mins}:{secs:02d}")
 
-# -------------------------------
-# QUESTIONS
-# -------------------------------
+    # -----------------------------
+    # QUESTIONS
+    # -----------------------------
 
-total_questions = len(questions)
+    total_questions = len(questions)
 
-# initialize answers list once
-if len(st.session_state.answers) != total_questions:
-    st.session_state.answers = [""] * total_questions
+    if len(st.session_state.answers) != total_questions:
+        st.session_state.answers = [""] * total_questions
 
-for i, q in enumerate(questions):
+    for i, q in enumerate(questions):
 
-    ans = st.text_area(
-        f"Q{i+1}. {q}",
-        value=st.session_state.answers[i],
-        key=f"q{i}"
-    )
+        ans = st.text_area(
+            f"Q{i+1}. {q}",
+            value=st.session_state.answers[i],
+            key=f"q{i}"
+        )
 
-    st.session_state.answers[i] = ans
+        st.session_state.answers[i] = ans
 
-answers = st.session_state.answers
+    answers = st.session_state.answers
 
-    # -------------------------------
+    # -----------------------------
     # PROGRESS BAR
-    # -------------------------------
+    # -----------------------------
 
     answered = len([a for a in answers if a.strip() != ""])
     st.progress(answered / total_questions)
@@ -195,7 +196,6 @@ answers = st.session_state.answers
             requests.post(WEBHOOK_URL, json=autosave_payload)
         except:
             pass
-
 
     # -----------------------------
     # SUBMIT BUTTON
