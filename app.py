@@ -1,3 +1,4 @@
+from streamlit_autorefresh import st_autorefresh
 import streamlit as st
 import time
 import requests
@@ -10,7 +11,7 @@ WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzZSrHA5Sfuqqt0apwM7EI5dW
 TEST_DURATION = 900   # 15 minutes
 
 st.title("Candidate Assessment Test")
-
+st_autorefresh(interval=1000, key="timer")
 
 # -------------------------------
 # SESSION STATE
