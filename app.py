@@ -1,133 +1,104 @@
 import streamlit as st
 import pandas as pd
-import gspread
-from google.oauth2.service_account import Credentials
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaIoBaseUpload
-import io
 import time
+import requests
 from datetime import datetime
 
-# Google setup
-scope = [
-"https://spreadsheets.google.com/feeds",
-"https://www.googleapis.com/auth/spreadsheets",
-"https://www.googleapis.com/auth/drive.file",
-"https://www.googleapis.com/auth/drive"
-]
+st.set_page_config(page_title="Candidate Test", layout="wide")
 
-creds = Credentials.from_service_account_file("credentials.json", scopes=scope)
-client = gspread.authorize(creds)
+# Your webhook URL
+WEBHOOK_URL = "https://script.google.com/macros/s/AKfycby-XRF2JQdcaZGVimtKwVVupvovFZ7G0uMttV4uA4f8tgC6fZe_0lcXkAZiwy2oNCcT4A/exec"
 
-sheet = client.open_by_key("1yp6Ei78Nax1qozA-UzcYhvcd4QAPZsrVXkJ1xAiB_m8")
-questions_sheet = sheet.worksheet("Questions")
-responses_sheet = sheet.worksheet("Responses")
+st.title("Candidate Assessment Test")
 
-drive_service = build("drive", "v3", credentials=creds)
+# Session variables
+if "start_time" not in st.session_state:
+    st.session_state.start_time = None
 
-FOLDER_ID = "14DRwl04uRrx98-ic9bb9ck-NTuM5IgZ-"
+if "submitted" not in st.session_state:
+    st.session_state.submitted = False
 
-st.set_page_config(page_title="Candidate Test")
 
-menu = st.sidebar.selectbox("Menu",["Candidate Test","Admin"])
+# Candidate info page
+if st.session_state.start_time is None:
 
-# Load questions
-questions = questions_sheet.col_values(1)[1:]
+    st.header("Candidate Information")
 
-if menu == "Candidate Test":
+    name = st.text_input("Full Name")
+    email = st.text_input("Email")
+    phone = st.text_input("Mobile Number")
+    cv = st.file_uploader("Upload CV (PDF)", type=["pdf"])
 
-    st.title("Candidate Assessment")
+    if st.button("Start Test"):
 
-    if "start_time" not in st.session_state:
-        st.session_state.start_time = None
+        if name and email and phone:
+            st.session_state.start_time = time.time()
+            st.session_state.name = name
+            st.session_state.email = email
+            st.session_state.phone = phone
+            st.rerun()
 
-    if st.session_state.start_time is None:
+        else:
+            st.error("Please fill all details before starting the test")
 
-        name = st.text_input("Full Name")
-        email = st.text_input("Email")
-        phone = st.text_input("Phone")
-        cv = st.file_uploader("Upload CV")
 
-        existing_emails = responses_sheet.col_values(2)
+# Test page
+else:
 
-        if st.button("Start Test"):
+    elapsed = int(time.time() - st.session_state.start_time)
+    remaining = 900 - elapsed
 
-            if email in existing_emails:
-                st.error("You have already taken this test.")
-            elif name and email:
-                st.session_state.start_time = time.time()
-                st.session_state.name = name
-                st.session_state.email = email
-                st.session_state.phone = phone
-                st.session_state.cv = cv
-                st.rerun()
+    if remaining <= 0:
+        st.warning("Time is up. Auto submitting.")
+        st.session_state.submitted = True
 
-    else:
+    mins = remaining // 60
+    secs = remaining % 60
 
-        elapsed = int(time.time() - st.session_state.start_time)
-        remaining = 900 - elapsed
+    st.markdown(f"## ⏱ Time Remaining: {mins}:{secs:02d}")
 
-        mins = remaining // 60
-        secs = remaining % 60
+    questions = [
+        "Explain GST Input Tax Credit",
+        "What is TDS under section 194Q?",
+        "Difference between LLP and Pvt Ltd",
+        "Explain working capital",
+        "What is deferred tax",
+        "Explain capital gains",
+        "What is MAT",
+        "Explain GST reverse charge",
+        "What is EBITDA",
+        "Explain cash flow statement",
+        "Question 11",
+        "Question 12",
+        "Question 13",
+        "Question 14",
+        "Question 15",
+        "Question 16",
+        "Question 17",
+        "Question 18",
+        "Question 19",
+        "Question 20"
+    ]
 
-        st.markdown(f"### ⏱ Time Remaining: {mins}:{secs:02d}")
+    answers = []
 
-        answers = []
+    for i, q in enumerate(questions):
+        ans = st.text_area(q, key=i)
+        answers.append(ans)
 
-        for i,q in enumerate(questions):
-            ans = st.text_area(q,key=i)
-            answers.append(ans)
+    if st.button("Submit Test") or st.session_state.submitted:
 
-        if st.button("Submit") or remaining <= 0:
+        payload = {
+            "name": st.session_state.name,
+            "email": st.session_state.email,
+            "phone": st.session_state.phone,
+            "cv_link": "",
+            "timestamp": str(datetime.now()),
+            "answers": answers
+        }
 
-            cv_link = ""
-
-            if st.session_state.cv:
-
-                file = st.session_state.cv
-                file_bytes = io.BytesIO(file.read())
-
-                media = MediaIoBaseUpload(file_bytes,mimetype=file.type)
-
-                file_metadata = {
-                    "name": file.name,
-                    "parents":[FOLDER_ID]
-                }
-
-                uploaded = drive_service.files().create(
-                    body=file_metadata,
-                    media_body=media,
-                    fields="id"
-                ).execute()
-
-                cv_link = f"https://drive.google.com/file/d/{uploaded['id']}"
-
-            responses_sheet.append_row([
-                st.session_state.name,
-                st.session_state.email,
-                st.session_state.phone,
-                cv_link,
-                str(datetime.now()),
-                *answers
-            ])
-
+        try:
+            requests.post(WEBHOOK_URL, json=payload)
             st.success("Test submitted successfully!")
-
-if menu == "Admin":
-
-    password = st.text_input("Enter admin password",type="password")
-
-    if password == "Klick@123":
-
-        st.title("Admin Dashboard")
-
-        data = responses_sheet.get_all_records()
-        df = pd.DataFrame(data)
-
-        st.dataframe(df)
-
-        st.download_button(
-            "Download Excel",
-            df.to_excel("responses.xlsx",index=False),
-            "responses.xlsx"
-        )
+        except:
+            st.error("Submission failed. Please retry.")
