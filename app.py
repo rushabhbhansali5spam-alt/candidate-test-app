@@ -143,26 +143,27 @@ else:
 
     st.markdown(f"## ⏱ Time Remaining: {mins}:{secs:02d}")
 
-    # -------------------------------
-    # QUESTIONS
-    # -------------------------------
+# -------------------------------
+# QUESTIONS
+# -------------------------------
 
-    total_questions = len(questions)
+total_questions = len(questions)
 
-    for i, q in enumerate(questions):
+# initialize answers list once
+if len(st.session_state.answers) != total_questions:
+    st.session_state.answers = [""] * total_questions
 
-        if i not in st.session_state.answers:
-            st.session_state.answers[i] = ""
+for i, q in enumerate(questions):
 
-        ans = st.text_area(
-            f"Q{i+1}. {q}",
-            value=st.session_state.answers[i],
-            key=f"q{i}"
-        )
+    ans = st.text_area(
+        f"Q{i+1}. {q}",
+        value=st.session_state.answers[i],
+        key=f"q{i}"
+    )
 
-        st.session_state.answers[i] = ans
+    st.session_state.answers[i] = ans
 
-    answers = list(st.session_state.answers.values())
+answers = st.session_state.answers
 
     # -------------------------------
     # PROGRESS BAR
