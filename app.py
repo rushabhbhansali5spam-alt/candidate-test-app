@@ -2,6 +2,7 @@ import streamlit as st
 import time
 import requests
 from datetime import datetime
+from streamlit_autorefresh import st_autorefresh
 
 st.set_page_config(page_title="Candidate Test", layout="wide")
 
@@ -162,5 +163,17 @@ else:
     # LIVE TIMER LOOP
     # -----------------------
 
-    time.sleep(1)
-    st.rerun()
+    # refresh every second (1000 ms)
+st_autorefresh(interval=1000, key="timer")
+
+elapsed = int(time.time() - st.session_state.start_time)
+remaining = 900 - elapsed
+
+if remaining <= 0:
+    remaining = 0
+    st.session_state.submitted = True
+
+mins = remaining // 60
+secs = remaining % 60
+
+st.markdown(f"## ⏱ Time Remaining: {mins}:{secs:02d}")
