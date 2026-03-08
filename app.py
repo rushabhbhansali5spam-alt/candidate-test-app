@@ -131,26 +131,35 @@ else:
 
     st.markdown(f"## ⏱ Time Remaining: {mins}:{secs:02d}")
 
-# -----------------------------
-# LOAD QUESTIONS
-# -----------------------------
+# -------------------------------
+# QUESTIONS
+# -------------------------------
+total_questions = len(questions)
 
-if "questions" not in st.session_state:
+    for i,q in enumerate(questions):
 
-    try:
-        response = requests.get(WEBHOOK_URL)
+        if i not in st.session_state.answers:
+            st.session_state.answers[i] = ""
 
-        if response.status_code == 200:
-            st.session_state.questions = response.json()
-        else:
-            st.error("Unable to load questions from server.")
-            st.stop()
+        ans = st.text_area(
+            f"Q{i+1}. {q}",
+            value=st.session_state.answers[i],
+            key=f"q{i}"
+        )
 
-    except:
-        st.error("Error connecting to question server.")
-        st.stop()
+        st.session_state.answers[i] = ans
 
-questions = st.session_state.questions
+
+    answers = list(st.session_state.answers.values())
+
+
+# -------------------------------
+# PROGRESS BAR
+# -------------------------------
+answered = len([a for a in answers if a.strip()!=""])
+st.progress(answered/total_questions)
+st.write(f"Answered {answered} of {total_questions} questions")
+
 
 # -----------------------------
 # AUTO SAVE EVERY 15 SEC
