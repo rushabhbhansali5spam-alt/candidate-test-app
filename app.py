@@ -152,29 +152,28 @@ if "questions" not in st.session_state:
 
 questions = st.session_state.questions
 
-    # -----------------------------
-    # AUTO SAVE EVERY 15 SEC
-    # -----------------------------
+# -----------------------------
+# AUTO SAVE EVERY 15 SEC
+# -----------------------------
 
-    if time.time() - st.session_state.last_autosave > 15:
+if time.time() - st.session_state.last_autosave > 15:
 
-        st.session_state.last_autosave = time.time()
+    st.session_state.last_autosave = time.time()
 
-        autosave_payload = {
-            "name": st.session_state.name,
-            "email": st.session_state.email,
-            "phone": st.session_state.phone,
-            "cv_link": st.session_state.cv,
-            "timestamp": str(datetime.now()),
-            "answers": st.session_state.answers,
-            "autosave": True
-        }
+    autosave_payload = {
+        "name": st.session_state.name,
+        "email": st.session_state.email,
+        "phone": st.session_state.phone,
+        "cv_link": st.session_state.cv,
+        "timestamp": str(datetime.now()),
+        "answers": st.session_state.answers,
+        "autosave": True
+    }
 
-        try:
-            requests.post(WEBHOOK_URL, json=autosave_payload)
-        except:
-            pass
-
+    try:
+        requests.post(WEBHOOK_URL, json=autosave_payload)
+    except:
+        pass
     # -----------------------------
     # SUBMIT BUTTON
     # -----------------------------
