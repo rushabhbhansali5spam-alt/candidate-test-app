@@ -11,14 +11,16 @@ WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzZSrHA5Sfuqqt0apwM7EI5dW
 # HEADER
 # -----------------------------
 
-col1, col2 = st.columns([1,6])
+col1, col2 = st.columns([2,8])
 
 with col1:
-    st.image("Final Logo.png", width=120)
+    st.image("Final Logo.png", width=220)
 
 with col2:
-    st.markdown("## Klick Consulting")
-    st.markdown("### Candidate Assessment Test")
+    st.markdown("""
+    <h1 style='margin-bottom:0px;'>Klick Consulting</h1>
+    <h3 style='margin-top:5px;'>Candidate Assessment Test</h3>
+    """, unsafe_allow_html=True)
 
 st.markdown("---")
 
