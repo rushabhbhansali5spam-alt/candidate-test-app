@@ -10,7 +10,7 @@ WEBHOOK_URL = "https://script.google.com/macros/s/AKfycby-XRF2JQdcaZGVimtKwVVupv
 st.title("Candidate Assessment Test")
 
 # Session variables
-if "start_time" not in st.session_state:
+if "start_time" not in st.session_state:    
     st.session_state.start_time = None
 
 if "submitted" not in st.session_state:
