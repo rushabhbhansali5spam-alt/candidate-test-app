@@ -5,7 +5,7 @@ from datetime import datetime
 
 st.set_page_config(page_title="Candidate Test", layout="wide")
 
-WEBHOOK_URL = "https://script.google.com/macros/s/AKfycby-XRF2JQdcaZGVimtKwVVupvovFZ7G0uMttV4uA4f8tgC6fZe_0lcXkAZiwy2oNCcT4A/exec"
+WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzZSrHA5Sfuqqt0apwM7EI5dWpMGK4OfaqKKzxE9F1KiYhFpfU3rhFLTZ_KYeDOy8oSQA/exec"
 
 st.title("Candidate Assessment Test")
 
