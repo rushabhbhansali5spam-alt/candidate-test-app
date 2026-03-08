@@ -17,7 +17,7 @@ scope = [
 creds = Credentials.from_service_account_file("credentials.json", scopes=scope)
 client = gspread.authorize(creds)
 
-sheet = client.open("Candidate_Test_DB")
+sheet = client.open_by_key("1yp6Ei78Nax1qozA-UzcYhvcd4QAPZsrVXkJ1xAiB_m8")
 questions_sheet = sheet.worksheet("Questions")
 responses_sheet = sheet.worksheet("Responses")
 
