@@ -134,7 +134,8 @@ else:
 # -------------------------------
 # QUESTIONS
 # -------------------------------
-total_questions = len(questions)
+
+    total_questions = len(questions)
 
 for i,q in enumerate(questions):
 
