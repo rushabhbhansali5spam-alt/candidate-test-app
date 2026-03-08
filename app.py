@@ -17,7 +17,7 @@ TEST_DURATION = 900
 col1, col2 = st.columns([1,5])
 
 with col1:
-    st.image("FINAL LOGO.PNG", width=120)
+    st.image("Final Logo.png", width=120)
 
 with col2:
     st.markdown("## Klick Consulting")
