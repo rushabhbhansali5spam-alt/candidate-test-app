@@ -2,19 +2,16 @@ import streamlit as st
 import time
 import requests
 from datetime import datetime
-from fpdf import FPDF
 
 st.set_page_config(page_title="Candidate Test", layout="wide")
 
 WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzZSrHA5Sfuqqt0apwM7EI5dWpMGK4OfaqKKzxE9F1KiYhFpfU3rhFLTZ_KYeDOy8oSQA/exec"
 
-TEST_DURATION = 900
+# -----------------------------
+# HEADER
+# -----------------------------
 
-# -------------------------------
-# HEADER WITH LOGO
-# -------------------------------
-
-col1, col2 = st.columns([1,5])
+col1, col2 = st.columns([1,6])
 
 with col1:
     st.image("Final Logo.png", width=120)
@@ -23,73 +20,29 @@ with col2:
     st.markdown("## Klick Consulting")
     st.markdown("### Candidate Assessment Test")
 
-st.divider()
+st.markdown("---")
 
-
-# -------------------------------
-# SESSION STATE
-# -------------------------------
-
-if "step" not in st.session_state:
-    st.session_state.step = 1
+# -----------------------------
+# SESSION VARIABLES
+# -----------------------------
 
 if "start_time" not in st.session_state:
     st.session_state.start_time = None
 
-if "answers" not in st.session_state:
-    st.session_state.answers = {}
-
 if "submitted" not in st.session_state:
     st.session_state.submitted = False
 
+if "answers" not in st.session_state:
+    st.session_state.answers = []
 
-# -------------------------------
-# LOAD QUESTIONS
-# -------------------------------
+if "last_autosave" not in st.session_state:
+    st.session_state.last_autosave = time.time()
 
-@st.cache_data
-def load_questions():
-    r = requests.get(WEBHOOK_URL)
-    return [q.replace("\n"," ") for q in r.json()]
+# -----------------------------
+# CANDIDATE INFORMATION
+# -----------------------------
 
-questions = load_questions()
-
-
-# -------------------------------
-# PDF GENERATOR
-# -------------------------------
-
-def generate_pdf(name,email,answers):
-
-    pdf = FPDF()
-    pdf.add_page()
-
-    pdf.set_font("Arial","B",16)
-    pdf.cell(0,10,"Candidate Assessment Test",ln=True)
-
-    pdf.set_font("Arial","",12)
-    pdf.cell(0,10,f"Name: {name}",ln=True)
-    pdf.cell(0,10,f"Email: {email}",ln=True)
-    pdf.cell(0,10,f"Date: {datetime.now()}",ln=True)
-
-    pdf.ln(10)
-
-    for i,(q,a) in enumerate(zip(questions,answers)):
-        pdf.multi_cell(0,8,f"Q{i+1}. {q}")
-        pdf.multi_cell(0,8,f"Answer: {a}")
-        pdf.ln(3)
-
-    filename = f"{name}_answers.pdf"
-    pdf.output(filename)
-
-    return filename
-
-
-# -------------------------------
-# STEP 1: CANDIDATE INFO
-# -------------------------------
-
-if st.session_state.step == 1:
+if st.session_state.start_time is None:
 
     st.header("Candidate Information")
 
@@ -97,86 +50,58 @@ if st.session_state.step == 1:
     email = st.text_input("Email")
     phone = st.text_input("Mobile Number")
 
+    cv = st.file_uploader("Upload CV (PDF)", type=["pdf"])
+
     if st.button("Continue"):
 
-        if name and email and phone:
+        if name and email and phone and cv:
 
+            st.session_state.start_time = time.time()
             st.session_state.name = name
             st.session_state.email = email
             st.session_state.phone = phone
+            st.session_state.cv = cv.name
 
-            st.session_state.step = 2
             st.rerun()
 
         else:
-            st.error("Please fill all fields.")
+            st.error("Please complete all fields including CV.")
 
-
-# -------------------------------
-# STEP 2: INSTRUCTIONS
-# -------------------------------
-
-elif st.session_state.step == 2:
-
-    st.header("Test Instructions")
-
-    st.markdown(f"""
-### Please read carefully before starting:
-
-⏱ **Duration:** 15 Minutes  
-📄 **Total Questions:** {len(questions)}
-
----
-
-### Rules
-
-• Do not refresh the page  
-• Do not switch browser tabs  
-• Do not open other websites  
-• Sit alone and complete the test honestly  
-• Once the timer ends, the test will **auto submit**
-
----
-
-### Good Luck 👍
-""")
-
-    if st.button("Start Test Now"):
-
-        st.session_state.start_time = time.time()
-        st.session_state.step = 3
-        st.rerun()
-
-
-# -------------------------------
-# STEP 3: TEST
-# -------------------------------
+# -----------------------------
+# TEST PAGE
+# -----------------------------
 
 else:
 
     elapsed = int(time.time() - st.session_state.start_time)
-    remaining = TEST_DURATION - elapsed
+    remaining = 900 - elapsed
 
     if remaining <= 0:
-        remaining = 0
+        st.warning("Time is up. Auto submitting.")
         st.session_state.submitted = True
 
     mins = remaining // 60
     secs = remaining % 60
 
-    st.markdown(f"## ⏱ Time Remaining: {mins:02d}:{secs:02d}")
+    st.markdown(f"## ⏱ Time Remaining: {mins}:{secs:02d}")
 
+    # -----------------------------
+    # LOAD QUESTIONS
+    # -----------------------------
 
-    # -------------------------------
-    # QUESTIONS
-    # -------------------------------
+    response = requests.get(WEBHOOK_URL)
+    questions = response.json()
 
-    total_questions = len(questions)
+    if len(st.session_state.answers) == 0:
+        st.session_state.answers = [""] * len(questions)
 
-    for i,q in enumerate(questions):
+    answers = []
 
-        if i not in st.session_state.answers:
-            st.session_state.answers[i] = ""
+    # -----------------------------
+    # QUESTIONS LOOP
+    # -----------------------------
+
+    for i, q in enumerate(questions):
 
         ans = st.text_area(
             f"Q{i+1}. {q}",
@@ -184,61 +109,50 @@ else:
             key=f"q{i}"
         )
 
-        st.session_state.answers[i] = ans
+        answers.append(ans)
 
+    st.session_state.answers = answers
 
-    answers = list(st.session_state.answers.values())
+    # -----------------------------
+    # AUTO SAVE EVERY 15 SEC
+    # -----------------------------
 
+    if time.time() - st.session_state.last_autosave > 15:
 
-    # -------------------------------
-    # PROGRESS BAR
-    # -------------------------------
+        st.session_state.last_autosave = time.time()
 
-    answered = len([a for a in answers if a.strip()!=""])
+        autosave_payload = {
+            "name": st.session_state.name,
+            "email": st.session_state.email,
+            "phone": st.session_state.phone,
+            "cv_link": st.session_state.cv,
+            "timestamp": str(datetime.now()),
+            "answers": st.session_state.answers,
+            "autosave": True
+        }
 
-    st.progress(answered/total_questions)
-    st.write(f"Answered {answered} of {total_questions} questions")
+        try:
+            requests.post(WEBHOOK_URL, json=autosave_payload)
+        except:
+            pass
 
+    # -----------------------------
+    # SUBMIT BUTTON
+    # -----------------------------
 
-    # -------------------------------
-    # SUBMIT TEST
-    # -------------------------------
-
-    if (st.button("Submit Test") or st.session_state.submitted) and not st.session_state.get("final_submit",False):
-
-        st.session_state.final_submit = True
+    if st.button("Submit Test") or st.session_state.submitted:
 
         payload = {
             "name": st.session_state.name,
             "email": st.session_state.email,
             "phone": st.session_state.phone,
+            "cv_link": st.session_state.cv,
             "timestamp": str(datetime.now()),
-            "answers": answers
+            "answers": st.session_state.answers
         }
 
         try:
-
-            requests.post(WEBHOOK_URL,json=payload)
-
-            pdf_file = generate_pdf(
-                st.session_state.name,
-                st.session_state.email,
-                answers
-            )
-
-            with open(pdf_file,"rb") as f:
-                st.download_button(
-                    "Download Your Answer Sheet",
-                    f,
-                    file_name=pdf_file
-                )
-
+            requests.post(WEBHOOK_URL, json=payload)
             st.success("Test submitted successfully!")
-
         except:
-            st.error("Submission failed.")
-
-
-    # TIMER REFRESH
-    time.sleep(1)
-    st.rerun()
+            st.error("Submission failed. Please retry.")
