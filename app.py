@@ -57,14 +57,14 @@ else:
 
     st.markdown(f"## ⏱ Time Remaining: {mins}:{secs:02d}")
 
-    response = requests.get(WEBHOOK_URL)
+ response = requests.get(WEBHOOK_URL)
 questions = response.json()
 
-    answers = []
+answers = []
 
-    for i, q in enumerate(questions):
-        ans = st.text_area(q, key=i)
-        answers.append(ans)
+for i, q in enumerate(questions):
+    ans = st.text_area(q, key=i)
+    answers.append(ans)
 
     if st.button("Submit Test") or st.session_state.submitted:
 
