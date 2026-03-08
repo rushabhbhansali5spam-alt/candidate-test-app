@@ -1,17 +1,19 @@
-from streamlit_autorefresh import st_autorefresh
 import streamlit as st
 import time
 import requests
 from datetime import datetime
+from streamlit_autorefresh import st_autorefresh
 
 st.set_page_config(page_title="Candidate Test", layout="wide")
 
 WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzZSrHA5Sfuqqt0apwM7EI5dWpMGK4OfaqKKzxE9F1KiYhFpfU3rhFLTZ_KYeDOy8oSQA/exec"
 
-TEST_DURATION = 900   # 15 minutes
+TEST_DURATION = 900  # 15 minutes
 
 st.title("Candidate Assessment Test")
-st_autorefresh(interval=1000, key="timer")
+
+# Refresh every second
+st_autorefresh(interval=1000, key="timer_refresh")
 
 # -------------------------------
 # SESSION STATE
@@ -34,7 +36,7 @@ if "submitted" not in st.session_state:
 @st.cache_data
 def load_questions():
     response = requests.get(WEBHOOK_URL)
-    return [q.replace("\n"," ") for q in response.json()]
+    return [q.replace("\n", " ") for q in response.json()]
 
 
 questions = load_questions()
@@ -98,20 +100,20 @@ else:
         if i not in st.session_state.answers:
             st.session_state.answers[i] = ""
 
-        answer = st.text_area(
+        ans = st.text_area(
             f"Q{i+1}. {q}",
             value=st.session_state.answers[i],
             key=f"q{i}"
         )
 
-        st.session_state.answers[i] = answer
+        st.session_state.answers[i] = ans
 
 
     answers = list(st.session_state.answers.values())
 
 
     # -------------------------------
-    # PROGRESS
+    # PROGRESS BAR
     # -------------------------------
 
     answered = len([a for a in answers if a.strip() != ""])
@@ -121,7 +123,7 @@ else:
 
 
     # -------------------------------
-    # SUBMIT
+    # SUBMIT TEST
     # -------------------------------
 
     if (st.button("Submit Test") or st.session_state.submitted) and not st.session_state.get("final_submit", False):
