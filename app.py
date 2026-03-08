@@ -57,28 +57,8 @@ else:
 
     st.markdown(f"## ⏱ Time Remaining: {mins}:{secs:02d}")
 
-    questions = [
-        "Explain GST Input Tax Credit",
-        "What is TDS under section 194Q?",
-        "Difference between LLP and Pvt Ltd",
-        "Explain working capital",
-        "What is deferred tax",
-        "Explain capital gains",
-        "What is MAT",
-        "Explain GST reverse charge",
-        "What is EBITDA",
-        "Explain cash flow statement",
-        "Question 11",
-        "Question 12",
-        "Question 13",
-        "Question 14",
-        "Question 15",
-        "Question 16",
-        "Question 17",
-        "Question 18",
-        "Question 19",
-        "Question 20"
-    ]
+    response = requests.get(WEBHOOK_URL)
+questions = response.json()
 
     answers = []
 
