@@ -150,7 +150,7 @@ for i,q in enumerate(questions):
         st.session_state.answers[i] = ans
 
 
-    answers = list(st.session_state.answers.values())
+answers = list(st.session_state.answers.values())
 
 
 # -------------------------------
