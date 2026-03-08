@@ -136,7 +136,7 @@ else:
 # -------------------------------
 total_questions = len(questions)
 
-    for i,q in enumerate(questions):
+for i,q in enumerate(questions):
 
         if i not in st.session_state.answers:
             st.session_state.answers[i] = ""
