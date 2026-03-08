@@ -8,9 +8,9 @@ st.set_page_config(page_title="Candidate Test", layout="wide")
 
 WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzZSrHA5Sfuqqt0apwM7EI5dWpMGK4OfaqKKzxE9F1KiYhFpfU3rhFLTZ_KYeDOy8oSQA/exec"
 
-# -----------------------
+# -----------------------------
 # HEADER
-# -----------------------
+# -----------------------------
 
 col1, col2 = st.columns([3,7])
 
@@ -19,18 +19,21 @@ with col1:
 
 with col2:
     st.markdown("""
-    <h1 style='margin-bottom:0'>Klick Consulting</h1>
-    <h3 style='margin-top:5px'>Candidate Assessment Test</h3>
+    <h1 style='margin-bottom:0;'>Klick Consulting</h1>
+    <h3 style='margin-top:5px;'>Candidate Assessment Test</h3>
     """, unsafe_allow_html=True)
 
 st.markdown("---")
 
-# -----------------------
-# SESSION STATE
-# -----------------------
+# -----------------------------
+# SESSION VARIABLES
+# -----------------------------
 
 if "start_time" not in st.session_state:
     st.session_state.start_time = None
+
+if "instructions" not in st.session_state:
+    st.session_state.instructions = False
 
 if "submitted" not in st.session_state:
     st.session_state.submitted = False
@@ -41,11 +44,11 @@ if "answers" not in st.session_state:
 if "last_autosave" not in st.session_state:
     st.session_state.last_autosave = time.time()
 
-# -----------------------
+# -----------------------------
 # CANDIDATE INFO PAGE
-# -----------------------
+# -----------------------------
 
-if st.session_state.start_time is None:
+if st.session_state.start_time is None and not st.session_state.instructions:
 
     st.header("Candidate Information")
 
@@ -59,25 +62,62 @@ if st.session_state.start_time is None:
 
         if name and email and phone and cv:
 
-            st.session_state.start_time = time.time()
             st.session_state.name = name
             st.session_state.email = email
             st.session_state.phone = phone
             st.session_state.cv = cv.name
 
+            st.session_state.instructions = True
             st.rerun()
 
         else:
             st.error("Please complete all fields including CV.")
 
-# -----------------------
+# -----------------------------
+# INSTRUCTIONS PAGE
+# -----------------------------
+
+elif st.session_state.instructions and st.session_state.start_time is None:
+
+    st.header("Test Instructions")
+
+    st.markdown("""
+### Please read carefully before starting:
+
+• Total Test Time: **15 Minutes**
+
+• Once the test begins **the timer cannot be paused**
+
+• Do **NOT refresh the page**
+
+• Do **NOT switch browser tabs**
+
+• Ensure you are **sitting alone**
+
+• The test will **auto submit when time ends**
+
+• All answers are **auto saved**
+
+---
+
+### Click below when you are ready.
+
+Good luck!
+""")
+
+    if st.button("Start Test"):
+
+        st.session_state.start_time = time.time()
+        st.rerun()
+
+# -----------------------------
 # TEST PAGE
-# -----------------------
+# -----------------------------
 
 else:
 
-    # TIMER PLACEHOLDER
-    timer_placeholder = st.empty()
+    # refresh page every second for timer
+    st_autorefresh(interval=1000, key="timer")
 
     elapsed = int(time.time() - st.session_state.start_time)
     remaining = 900 - elapsed
@@ -89,11 +129,11 @@ else:
     mins = remaining // 60
     secs = remaining % 60
 
-    timer_placeholder.markdown(f"## ⏱ Time Remaining: {mins}:{secs:02d}")
+    st.markdown(f"## ⏱ Time Remaining: {mins}:{secs:02d}")
 
-    # -----------------------
+    # -----------------------------
     # LOAD QUESTIONS
-    # -----------------------
+    # -----------------------------
 
     response = requests.get(WEBHOOK_URL)
     questions = response.json()
@@ -115,9 +155,9 @@ else:
 
     st.session_state.answers = answers
 
-    # -----------------------
-    # AUTO SAVE
-    # -----------------------
+    # -----------------------------
+    # AUTO SAVE EVERY 15 SEC
+    # -----------------------------
 
     if time.time() - st.session_state.last_autosave > 15:
 
@@ -138,9 +178,9 @@ else:
         except:
             pass
 
-    # -----------------------
+    # -----------------------------
     # SUBMIT BUTTON
-    # -----------------------
+    # -----------------------------
 
     if st.button("Submit Test") or st.session_state.submitted:
 
@@ -158,22 +198,3 @@ else:
             st.success("Test submitted successfully!")
         except:
             st.error("Submission failed. Please retry.")
-
-    # -----------------------
-    # LIVE TIMER LOOP
-    # -----------------------
-
-    # refresh every second (1000 ms)
-st_autorefresh(interval=1000, key="timer")
-
-elapsed = int(time.time() - st.session_state.start_time)
-remaining = 900 - elapsed
-
-if remaining <= 0:
-    remaining = 0
-    st.session_state.submitted = True
-
-mins = remaining // 60
-secs = remaining % 60
-
-st.markdown(f"## ⏱ Time Remaining: {mins}:{secs:02d}")
