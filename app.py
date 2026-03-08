@@ -39,10 +39,21 @@ if "submitted" not in st.session_state:
     st.session_state.submitted = False
 
 if "answers" not in st.session_state:
-    st.session_state.answers = []
+    st.session_state.answers = {}
 
 if "last_autosave" not in st.session_state:
     st.session_state.last_autosave = time.time()
+
+if "questions" not in st.session_state:
+    try:
+        response = requests.get(WEBHOOK_URL)
+        st.session_state.questions = response.json()
+    except:
+        st.error("Unable to load questions")
+        st.stop()
+
+questions = st.session_state.questions
+
 
 # -----------------------------
 # CANDIDATE INFO PAGE
@@ -72,6 +83,7 @@ if st.session_state.start_time is None and not st.session_state.instructions:
 
         else:
             st.error("Please complete all fields including CV.")
+
 
 # -----------------------------
 # INSTRUCTIONS PAGE
@@ -110,13 +122,13 @@ Good luck!
         st.session_state.start_time = time.time()
         st.rerun()
 
+
 # -----------------------------
 # TEST PAGE
 # -----------------------------
 
 else:
 
-    # refresh page every second for timer
     st_autorefresh(interval=1000, key="timer")
 
     elapsed = int(time.time() - st.session_state.start_time)
@@ -131,13 +143,13 @@ else:
 
     st.markdown(f"## ⏱ Time Remaining: {mins}:{secs:02d}")
 
-# -------------------------------
-# QUESTIONS
-# -------------------------------
+    # -------------------------------
+    # QUESTIONS
+    # -------------------------------
 
     total_questions = len(questions)
 
-for i,q in enumerate(questions):
+    for i, q in enumerate(questions):
 
         if i not in st.session_state.answers:
             st.session_state.answers[i] = ""
@@ -150,40 +162,40 @@ for i,q in enumerate(questions):
 
         st.session_state.answers[i] = ans
 
+    answers = list(st.session_state.answers.values())
 
-answers = list(st.session_state.answers.values())
+    # -------------------------------
+    # PROGRESS BAR
+    # -------------------------------
+
+    answered = len([a for a in answers if a.strip() != ""])
+    st.progress(answered / total_questions)
+    st.write(f"Answered {answered} of {total_questions} questions")
+
+    # -----------------------------
+    # AUTO SAVE EVERY 15 SEC
+    # -----------------------------
+
+    if time.time() - st.session_state.last_autosave > 15:
+
+        st.session_state.last_autosave = time.time()
+
+        autosave_payload = {
+            "name": st.session_state.name,
+            "email": st.session_state.email,
+            "phone": st.session_state.phone,
+            "cv_link": st.session_state.cv,
+            "timestamp": str(datetime.now()),
+            "answers": answers,
+            "autosave": True
+        }
+
+        try:
+            requests.post(WEBHOOK_URL, json=autosave_payload)
+        except:
+            pass
 
 
-# -------------------------------
-# PROGRESS BAR
-# -------------------------------
-answered = len([a for a in answers if a.strip()!=""])
-st.progress(answered/total_questions)
-st.write(f"Answered {answered} of {total_questions} questions")
-
-
-# -----------------------------
-# AUTO SAVE EVERY 15 SEC
-# -----------------------------
-
-if time.time() - st.session_state.last_autosave > 15:
-
-    st.session_state.last_autosave = time.time()
-
-    autosave_payload = {
-        "name": st.session_state.name,
-        "email": st.session_state.email,
-        "phone": st.session_state.phone,
-        "cv_link": st.session_state.cv,
-        "timestamp": str(datetime.now()),
-        "answers": st.session_state.answers,
-        "autosave": True
-    }
-
-    try:
-        requests.post(WEBHOOK_URL, json=autosave_payload)
-    except:
-        pass
     # -----------------------------
     # SUBMIT BUTTON
     # -----------------------------
@@ -196,7 +208,7 @@ if time.time() - st.session_state.last_autosave > 15:
             "phone": st.session_state.phone,
             "cv_link": st.session_state.cv,
             "timestamp": str(datetime.now()),
-            "answers": st.session_state.answers
+            "answers": answers
         }
 
         try:
